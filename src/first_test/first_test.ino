@@ -1,15 +1,18 @@
 #include <Robot_L298P.h> 
 
 
-#define Kp 0.8
-#define Kd 150//50 //10
-#define Ki 0.02
+#define Kp 0.17//0.2
+#define Kd 35//50 //10
+#define Ki 0 //0.02
 #define Kip 0.95
-#define MAX_E 100
-#define RAZGON_dt 5
+#define MAX_E 110
+#define RAZGON_dt 4
 
-#define parrot_cm 150
-#define parrot_angle 30
+#define MAX_R_SPEED 100
+#define MAX_L_SPEED 90
+
+#define parrot_cm 157
+#define parrot_angle 25
 
 void setup() {
   Serial.begin (9600); 
@@ -28,11 +31,17 @@ void setup() {
   Serial.println(Robot.enc_B);
   */
   //run_enc(2000,2000);
-  //enc_forward(10);
-  enc_left(360);
+  
+  /*for (int i = 0; i<4; i++) {
+    enc_forward(30);
+    enc_left(90);
+  }*/
 }
 
-void loop() {}
+void loop() {
+  enc_forward(100);
+  enc_forward(-100);
+}
 
 void enc_forward(int cm) {
   run_enc(parrot_cm*cm,parrot_cm*cm);
@@ -63,6 +72,7 @@ void run_enc(long int L, long int R) {
     eR_old = eR;
     PIDr = Pr*Kp + Ir*Ki + Dr*Kd;
     PIDr *= razgon;
+    PIDr = constrain(PIDr,-MAX_R_SPEED,MAX_R_SPEED);
 
     eL = L - Robot.enc_A;
     Pl = eL;
@@ -71,6 +81,7 @@ void run_enc(long int L, long int R) {
     eL_old = eL;
     PIDl = Pl*Kp + Il*Ki + Dl*Kd;
     PIDl *= razgon;
+    PIDl = constrain(PIDl,-MAX_L_SPEED,MAX_L_SPEED);
     
     Robot.motors(PIDl, PIDr);
 
@@ -80,5 +91,5 @@ void run_enc(long int L, long int R) {
     }
   } 
   Robot.motors(0,0);
-  //Serial.print(Robot.enc_B); Serial.print(" "); Serial.println(Robot.enc_A);
+  Serial.print(Robot.enc_B); Serial.print(" "); Serial.println(Robot.enc_A);
 }
