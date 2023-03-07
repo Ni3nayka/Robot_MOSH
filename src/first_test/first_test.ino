@@ -9,7 +9,10 @@
 #define RAZGON_dt 4
 
 #define MAX_R_SPEED 100
-#define MAX_L_SPEED 90
+#define MAX_L_SPEED 95 //90
+
+#define K_R_SPEED 1
+#define K_L_SPEED 0.95
 
 #define parrot_cm 157
 #define parrot_angle 25
@@ -72,7 +75,7 @@ void run_enc(long int L, long int R) {
     eR_old = eR;
     PIDr = Pr*Kp + Ir*Ki + Dr*Kd;
     PIDr *= razgon;
-    PIDr = constrain(PIDr,-MAX_R_SPEED,MAX_R_SPEED);
+    PIDr = constrain(PIDr,-MAX_R_SPEED,MAX_R_SPEED)*K_R_SPEED;
 
     eL = L - Robot.enc_A;
     Pl = eL;
@@ -81,7 +84,7 @@ void run_enc(long int L, long int R) {
     eL_old = eL;
     PIDl = Pl*Kp + Il*Ki + Dl*Kd;
     PIDl *= razgon;
-    PIDl = constrain(PIDl,-MAX_L_SPEED,MAX_L_SPEED);
+    PIDl = constrain(PIDl,-MAX_L_SPEED,MAX_L_SPEED)*K_L_SPEED;
     
     Robot.motors(PIDl, PIDr);
 
