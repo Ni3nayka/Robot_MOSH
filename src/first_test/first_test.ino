@@ -1,7 +1,7 @@
 #include <Robot_L298P.h> 
 
 
-#define Kp 0.1 // 0.17
+#define Kp 0.17 // 0.17
 #define Kd 35 // 35
 #define Ki 0 // 0
 #define Kip 0.95 
@@ -36,7 +36,7 @@ void setup() {
   Serial.println(Robot.enc_B);
   */
   //run_enc(2000,2000);
-  enc_forward(100);
+  enc_forward(30);
   //enc_left(720);
   
 //  for (int i = 0; i<4; i++) {
@@ -48,6 +48,8 @@ void setup() {
 void loop() {
 //  enc_forward(100);
 //  enc_forward(-100);
+//  enc_forward(30);
+//  enc_left(90);
 }
 
 void enc_forward(int cm) {
@@ -95,7 +97,8 @@ void run_enc(long int L, long int R) {
     PIDl = constrain(PIDl,-MAX_L_SPEED,MAX_L_SPEED)*K_L_SPEED;
     PIDl *= razgon;
 
-    long int PP = (eL - eR)*0;
+    long int PP = 0;
+    if (eL>0==eR>0) PP = (eL - eR)*2;
     
     Robot.motors(PIDl+PP, PIDr-PP);
 
