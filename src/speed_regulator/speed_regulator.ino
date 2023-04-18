@@ -1,25 +1,21 @@
 #include <Robot_L298P.h> 
 
 
-#define Kp 0.17 // 0.17
-#define Kd 35 // 35
-#define Ki 0 // 0
-#define Kip 0.95 
-#define MAX_E 110
-#define RAZGON_dt 5
-#define Kk 0.00001
-#define KUB_MAX 100
+#define Kp 0.03 // 0.03
+#define Kd 0.3 // 0.3
 
 #define MAX_R_SPEED 100
-#define MAX_L_SPEED 95 //90
+#define MAX_L_SPEED 100 //95
 
 #define K_R_SPEED 1
-#define K_L_SPEED 0.95
+#define K_L_SPEED 1 //0.95
 
 #define parrot_cm 157
 #define parrot_angle 25
 
-long int motor_speed = 10, last_enc = 0;
+long int last_enc_A = 0,last_enc_B = 0;
+long int motor_on_speed_L = 0,motor_on_speed_R = 0;
+double motor_speed_A = 1.0,motor_speed_B = 2.0;
 unsigned long int motor_time = 0;
 #define MOTOR_DT 10
 
@@ -29,89 +25,55 @@ void setup() {
   Robot.setup(); 
   Robot.reverse_motor_A();
   Robot.reverse_enc_B();
-  /*
-  Robot.reverse_motor_A();
-  Robot.reverse_motor_B();
-  Robot.reverse_enc_A();
-  Robot.reverse_enc_B();
-  Robot.motor_A(100);
-  Robot.motor_B(-100);
-  Robot.motors(1,2);
-  Serial.println(Robot.enc_A);
-  Serial.println(Robot.enc_B);
-  */
-  //run_enc(2000,2000);
-  motor_run(30);
-  //enc_left(720);
-  
-//  for (int i = 0; i<4; i++) {
-//    enc_forward(30);
-//    enc_left(90);
-//  }
 }
+
+unsigned long int ttt = 0;
 
 void loop() {
 //  enc_forward(100);
 //  enc_forward(-100);
 //  enc_forward(30);
 //  enc_left(90);
+//  if (millis()-ttt>500) {
+//    motor_speed_B += 0.1;
+//    ttt = millis();
+//  }
+  update_motor();
 }
 
-void update_motor(long int speed) {
-  if (millis()-motor_time>MOTOR_DT) {
-    long int real_speed = last_enc - Robot.enc_A;
-    long int e = motor_speed - real_speed;
+void update_motor() {
+  unsigned long int dt = millis()-motor_time;
+  if (dt>MOTOR_DT) {
+    double real_speed_A = double(Robot.enc_A - last_enc_A)/dt;
+    last_enc_A = Robot.enc_A;
+    long int eA = (motor_speed_A - real_speed_A)*100;
+    double real_speed_B = double(Robot.enc_B - last_enc_B)/dt;
+    last_enc_B = Robot.enc_B;
+    long int eB = (motor_speed_B - real_speed_B)*100;
+//    Serial.print(real_speed_A);
+//    Serial.print(" ");
+//    Serial.println(real_speed_B);
+    PID_motor_speed(eA,eB);
     motor_time = millis();
   }
 }
 
-void run_enc(long int L, long int R) {
-  Robot.enc_A = 0;
-  Robot.enc_B = 0;
-  long int eR = 0, eR_old = 0;
-  long int eL = 0, eL_old = 0;
-  unsigned long int t = millis(), t_razgon = millis();
-  long int Ir = 0,Pr,Dr,PIDr,Kr;
-  long int Il = 0,Pl,Dl,PIDl,Kl;
-  float razgon = 0.01;
-  while (millis() - t < 1000) {
-    if ( abs (eL) > MAX_E || abs (eR) > MAX_E) t = millis ();
-    
-    //Serial.print(Robot.enc_B); Serial.print(" "); Serial.println(Robot.enc_A);
-    
-    eR = R - Robot.enc_B;
-    eL = L - Robot.enc_A;
-    
-    Pr = eR;
-    Kr = constrain(eR,-KUB_MAX,KUB_MAX);
-    Kr = Kr*Kr*Kr;
-    Ir = eR + Ir*Kip;
-    Dr = eR - eR_old;
-    eR_old = eR;
-    PIDr = Pr*Kp + Ir*Ki + Dr*Kd + Kr*Kk;
-    PIDr = constrain(PIDr,-MAX_R_SPEED,MAX_R_SPEED)*K_R_SPEED;
-    PIDr *= razgon;
+long int _Pr,_Dr,_PIDr,_eR_old;
+long int _Pl,_Dl,_PIDl,_eL_old;
 
-    Pl = eL;
-    Kl = constrain(eL,-KUB_MAX,KUB_MAX);
-    Kl = Kl*Kl*Kl;
-    Il = eL + Il*Kip;
-    Dl = eL - eL_old;
-    eL_old = eL;
-    PIDl = Pl*Kp + Il*Ki + Dl*Kd + Kl*Kk;
-    PIDl = constrain(PIDl,-MAX_L_SPEED,MAX_L_SPEED)*K_L_SPEED;
-    PIDl *= razgon;
+void PID_motor_speed(long int eL, long int eR) {
 
-    long int PP = 0;
-    if (eL>0==eR>0) PP = (eL - eR)*2;
-    
-    Robot.motors(PIDl+PP, PIDr-PP);
-
-    if (millis() > t_razgon + RAZGON_dt && razgon<1.0) {
-      t_razgon = millis();
-      razgon += 0.01;
-    }
-  } 
-  Robot.motors(0,0);
-  Serial.print(Robot.enc_B); Serial.print(" "); Serial.println(Robot.enc_A);
+  _Pr = eR;
+  _Dr = eR - _eR_old;
+  _eR_old = eR;
+  _PIDr = _Pr*Kp + _Dr*Kd;
+  motor_on_speed_R += _PIDr;
+  motor_on_speed_R = constrain(motor_on_speed_R,-MAX_R_SPEED,MAX_R_SPEED)*K_R_SPEED;
+  if (motor_on_speed_R!=0) motor_on_speed_R -= motor_on_speed_R/abs(motor_on_speed_R);
+  Serial.print(eR);
+  Serial.print(" ");
+  Serial.print(_PIDr);
+  Serial.print(" ");
+  Serial.println(motor_on_speed_R);
+  Robot.motors(0,motor_on_speed_R);
 }
