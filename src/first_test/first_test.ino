@@ -36,7 +36,7 @@ void setup() {
   Serial.println(Robot.enc_B);
   */
   //run_enc(2000,2000);
-  enc_forward(30);
+  //enc_forward(30);
   //enc_left(720);
   
 //  for (int i = 0; i<4; i++) {
@@ -46,8 +46,8 @@ void setup() {
 }
 
 void loop() {
-//  enc_forward(100);
-//  enc_forward(-100);
+  enc_forward(100);
+  enc_forward(-100);
 //  enc_forward(30);
 //  enc_left(90);
 }

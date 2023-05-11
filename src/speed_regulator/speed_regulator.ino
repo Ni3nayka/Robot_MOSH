@@ -15,7 +15,7 @@
 
 long int last_enc_A = 0,last_enc_B = 0;
 long int motor_on_speed_L = 0,motor_on_speed_R = 0;
-double motor_speed_A = 1.0,motor_speed_B = 2.0;
+double motor_speed_A = 2.0,motor_speed_B = 2.0;
 unsigned long int motor_time = 0;
 #define MOTOR_DT 10
 
@@ -34,11 +34,18 @@ void loop() {
 //  enc_forward(-100);
 //  enc_forward(30);
 //  enc_left(90);
-//  if (millis()-ttt>500) {
-//    motor_speed_B += 0.1;
-//    ttt = millis();
-//  }
+  if (millis()-ttt>3000) {
+    motor_speed_A *= -1;
+    motor_speed_B *= -1;
+    //motor_speed_B += 0.1;
+    ttt = millis();
+  }
   update_motor();
+}
+
+
+void forward() {
+  
 }
 
 void update_motor() {
@@ -70,10 +77,17 @@ void PID_motor_speed(long int eL, long int eR) {
   motor_on_speed_R += _PIDr;
   motor_on_speed_R = constrain(motor_on_speed_R,-MAX_R_SPEED,MAX_R_SPEED)*K_R_SPEED;
   if (motor_on_speed_R!=0) motor_on_speed_R -= motor_on_speed_R/abs(motor_on_speed_R);
-  Serial.print(eR);
-  Serial.print(" ");
-  Serial.print(_PIDr);
-  Serial.print(" ");
-  Serial.println(motor_on_speed_R);
-  Robot.motors(0,motor_on_speed_R);
+//  Serial.print(eR);
+//  Serial.print(" ");
+//  Serial.print(_PIDr);
+//  Serial.print(" ");
+  //Serial.println(motor_on_speed_R);
+  _Pl = eL;
+  _Dl = eL - _eL_old;
+  _eL_old = eL;
+  _PIDl = _Pl*Kp + _Dl*Kd;
+  motor_on_speed_L += _PIDl;
+  motor_on_speed_L = constrain(motor_on_speed_L,-MAX_R_SPEED,MAX_R_SPEED)*K_L_SPEED;
+  if (motor_on_speed_L!=0) motor_on_speed_L -= motor_on_speed_L/abs(motor_on_speed_L);
+  Robot.motors(motor_on_speed_L,motor_on_speed_R);
 }
